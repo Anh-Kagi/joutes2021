@@ -162,13 +162,6 @@
             backgroundColor: 'red',
             showLine: true,
             tension: 0,
-          },{
-            label: 'PMRs',
-            data: pmrs,
-            borderColor: 'orange',
-            backgroundColor: 'orange',
-            showLine: true,
-            tension: 0,
           }]
         },
         options: {
@@ -186,6 +179,8 @@
               }
             },
             y: {
+              type: 'logarithmic',
+              min: 1,
               grid: {
                 color: 'gray',
               }
@@ -195,57 +190,66 @@
       });
 
       //// visitor amount
-      localStorage.setItem("total-visitors", localStorage.getItem("total-visitors") ?? 0);
-      localStorage.setItem("visitor-amount", localStorage.getItem("visitor-amount") ?? 0);
-      localStorage.setItem("pmr-amount", localStorage.getItem("pmr-amount") ?? 0);
-      document.getElementById("visitor-amount").innerText = localStorage.getItem("visitor-amount");
-      document.getElementById("pmr-amount").innerText = localStorage.getItem("pmr-amount");
-      document.getElementById("total-visitors").innerText = localStorage.getItem("total-visitors");
-
-      function incLocalStorage(item) {
-        localStorage.setItem(item, parseInt(localStorage.getItem(item))+1);
-      }
-
-      function decLocalStorage(item) {
-        localStorage.setItem(item, parseInt(localStorage.getItem(item))-1);
-      }
+      let totalvisitors = localStorage.getItem("total-visitors") ?? 0;
+      let visitoramount = localStorage.getItem("visitor-amount") ?? 0;
+      let pmramount = localStorage.getItem("pmr-amount") ?? 0;
+      document.getElementById("total-visitors").innerText = totalvisitors;
+      document.getElementById("visitor-amount").innerText = visitoramount;
+      document.getElementById("pmr-amount").innerText = pmramount;
 
       function incVisitor() {
-        incLocalStorage("visitor-amount");
-        incLocalStorage("total-visitors");
+        visitoramount++;
+        totalvisitors++;
         updateGraphData();
       }
 
       function decVisitor() {
-        decLocalStorage("visitor-amount");
+        visitoramount--;
         updateGraphData();
       }
 
       function incPMR() {
-        incLocalStorage("pmr-amount");
-        incLocalStorage("visitor-amount");
-        incLocalStorage("total-visitors");
-        updateGraphData();
+        pmramount++;
+        incVisitor();
       }
 
       function decPMR() {
-        decLocalStorage("pmr-amount");
-        decLocalStorage("visitor-amount");
-        updateGraphData();
+        pmramount--;
+        decVisitor();
       }
 
       function updateGraphData() {
-        document.getElementById("visitor-amount").innerText = localStorage.getItem("visitor-amount");
-        document.getElementById("pmr-amount").innerText = localStorage.getItem("pmr-amount");
-        document.getElementById("total-visitors").innerText = localStorage.getItem("total-visitors");
-        visitors.push({'x': new Date().toISOString(), 'y': localStorage.getItem("visitor-amount")});
-        pmrs.push({'x': new Date().toISOString(), 'y': localStorage.getItem("pmr-amount")});
+        document.getElementById("visitor-amount").innerText = visitoramount;
+        document.getElementById("pmr-amount").innerText = pmramount;
+        document.getElementById("total-visitors").innerText = totalvisitors;
+        visitors.push({x: Date.now(), y: visitoramount});
+        pmrs.push({x: Date.now(), y: pmramount});
+      }
+      setInterval(() => mychart.update(), 1000);
+
+      function backup() {
+        localStorage.setItem("visitor-amount", visitoramount);
+        localStorage.setItem("pmr-amount", pmramount);
+        localStorage.setItem("total-visitors", totalvisitors);
         localStorage.setItem("visitor-amount-data", JSON.stringify(visitors));
         localStorage.setItem("pmr-amount-data", JSON.stringify(pmrs));
-        mychart.update();
+      }
+      let backup_tm = setTimeout(backupTimeout, 5000);
+
+      function backupTimeout() {
+        backup();
+        setTimeout(backupTimeout, 5000);
       }
 
+      function onCloseBackup() {
+        clearTimeout(backup_tm);
+        backup();
+      }
+      addEventListener("beforeunload", onCloseBackup);
+
       function reset() {
+        clearTimeout(backup_tm);
+        removeEventListener("beforeunload", onCloseBackup);
         localStorage.removeItem("visitor-amount");
         localStorage.removeItem("visitor-amount-data");
         localStorage.removeItem("pmr-amount");
