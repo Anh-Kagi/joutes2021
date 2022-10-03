@@ -1,251 +1,250 @@
 <!DOCTYPE html>
-<html>
+<html lang="fr">
 
-  <head>
-    <meta charset="utf-8">
-    <title>comptage - joutes du téméraire</title>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.6.1"></script>
-    <script src="https://cdn.jsdelivr.net/npm/luxon@2.1.1"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-luxon@1.1.0"></script>
-    <style>
-    body {
-      margin: 0;
-      overflow: hidden;
+<head>
+	<meta charset="utf-8">
+	<title>comptage - joutes du téméraire</title>
+	<script src="https://cdn.jsdelivr.net/npm/chart.js@3.6.1"></script>
+	<script src="https://cdn.jsdelivr.net/npm/luxon@2.1.1"></script>
+	<script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-luxon@1.1.0"></script>
+	<link type="text/css" rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.2.0/css/all.min.css"/>
+	<style>
+        body {
+            margin: 0;
+            overflow: hidden;
 
-      background-color: black;
-    }
+            background-color: black;
+        }
 
-    #main {
-      display: flex;
-      flex-flow: row nowrap;
-      align-items: stretch;
+        #main {
+            display: flex;
+            flex-flow: row nowrap;
+            align-items: stretch;
 
-      width: 100vw;
-      height: 100vh;
-    }
+            width: 100vw;
+            height: 100vh;
+        }
 
-    #controlbar {
-      display: flex;
-      flex-flow: column nowrap;
-      align-items: stretch;
+        #controlbar {
+            display: flex;
+            flex-flow: column nowrap;
+            align-items: stretch;
 
-      width: 25%;
-      height: 100vh;
-      color: white;
-    }
+            width: 25%;
+            height: 100vh;
+            color: white;
+        }
 
-    #counter {
-      display: flex;
-      flex-flow: column nowrap;
-      align-items: center;
+        button {
+            border: none;
+            border-radius: 1em;
+            margin: 1em;
+            padding: 1em;
+            background-color: gray;
+        }
 
-      color: white;
-    }
+        button:hover {
+            background-color: lightgray;
+        }
 
-    button {
-      border: none;
-      border-radius: 1em;
-      margin: 1em;
-      padding: 1em;
-      background-color: gray;
-    }
+        #visitor-buttons {
+            display: flex;
+            flex-flow: row nowrap;
+            align-items: stretch;
+        }
 
-    button:hover {
-      background-color: lightgray;
-    }
+        #visitor-buttons button {
+            flex: 1;
+        }
 
-    #visitor-buttons {
-      display: flex;
-      flex-flow: row nowrap;
-      align-items: stretch;
-    }
+        #visitor-amount {
+            width: 50%;
+            margin-top: auto;
+            margin-bottom: auto;
+            text-align: center;
+        }
 
-    #visitor-buttons > button {
-      flex: 1;
-    }
+        #pmr-buttons {
+            display: flex;
+            flex-flow: row nowrap;
+            align-items: stretch;
+        }
 
-    #visitor-amount {
-      width: 50%;
-      margin-top: auto;
-      margin-bottom: auto;
-      text-align: center;
-    }
+        #pmr-buttons > button {
+            flex: 1;
+        }
 
-    #pmr-buttons {
-      display: flex;
-      flex-flow: row nowrap;
-      align-items: stretch;
-    }
+        #pmr-amount {
+            width: 50%;
+            margin-top: auto;
+            margin-bottom: auto;
+            text-align: center;
+        }
 
-    #pmr-buttons > button {
-      flex: 1;
-    }
+        #chart {
+            position: relative;
+            height: 100%;
+            width: 75%;
+        }
 
-    #pmr-amount {
-      width: 50%;
-      margin-top: auto;
-      margin-bottom: auto;
-      text-align: center;
-    }
+		#options, #options-buttons {
+			display: flex;
+			flex-direction: row;
+		}
+	</style>
+</head>
 
-    #chart {
-      position: relative;
-      height: 100%;
-      width: 75%;
-    }
-    </style>
-  </head>
+<body>
+<div id="main">
+	<div id="controlbar">
+		<h1 style="text-align:center;">Visiteurs:</h1>
+		<div id="visitor-buttons">
+			<button onclick="incVisitor()">
+				<i class="fa-solid fa-user-plus"></i>
+			</button>
+			<div id="visitor-amount"></div>
+			<button onclick="decVisitor()">
+				<i class="fa-solid fa-user-minus"></i>
+			</button>
+		</div>
+		<h2 style="text-align:center;">Dont PMR:</h2>
+		<div id="pmr-buttons">
+			<button onclick="incPMR()">
+				<i class="fa-solid fa-user-plus"></i>
+			</button>
+			<div id="pmr-amount"></div>
+			<button onclick="decPMR()">
+				<i class="fa-solid fa-user-minus"></i>
+			</button>
+		</div>
+		<h2 style="text-align:center;">Total:</h2>
+		<div id="total-visitors" style="text-align:center;"></div>
+		<div id="options">
+			<button onclick="toggleOptions()">
+				<i class="fa-solid fa-bars"></i>
+			</button>
+			<div id="options-buttons">
+				<button onclick="reset()" style="background-color: #cc0000;">
+					<i class="fa-solid fa-trash"></i>
+				</button>
+				<button onclick="save()">
+					<i class="fa-solid fa-floppy-disk"></i>
+				</button>
+			</div>
+		</div>
+	</div>
+	<div id="chart">
+		<canvas id="mychart"></canvas>
+	</div>
+</div>
 
-  <body>
-    <div id="main">
-      <div id="controlbar">
-        <h1 style="text-align:center;">Visiteurs:</h1>
-        <div id="visitor-buttons">
-          <button onclick="incVisitor()">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-user-plus">
-              <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-              <circle cx="8.5" cy="7" r="4"></circle>
-              <line x1="20" y1="8" x2="20" y2="14"></line>
-              <line x1="23" y1="11" x2="17" y2="11"></line>
-            </svg>
-          </button>
-          <div id="visitor-amount"></div>
-          <button onclick="decVisitor()">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-user-minus">
-              <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-              <circle cx="8.5" cy="7" r="4"></circle>
-              <line x1="23" y1="11" x2="17" y2="11"></line>
-            </svg>
-          </button>
-        </div>
-        <h2 style="text-align:center;">Dont PMR:</h1>
-        <div id="pmr-buttons">
-          <button onclick="incPMR()">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-user-plus">
-              <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-              <circle cx="8.5" cy="7" r="4"></circle>
-              <line x1="20" y1="8" x2="20" y2="14"></line>
-              <line x1="23" y1="11" x2="17" y2="11"></line>
-            </svg>
-          </button>
-          <div id="pmr-amount"></div>
-          <button onclick="decPMR()">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-user-minus">
-              <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-              <circle cx="8.5" cy="7" r="4"></circle>
-              <line x1="23" y1="11" x2="17" y2="11"></line>
-            </svg>
-          </button>
-        </div>
-        <h2 style="text-align:center;">Total:</h1>
-        <div id="total-visitors" style="text-align:center;"></div>
-      </div>
-      <div id="chart">
-        <canvas id="mychart"></canvas>
-      </div>
-    </div>
-  
 
-    <script>
-      //// chart
-      const visitors = JSON.parse(localStorage.getItem("visitor-amount-data")) ?? [{'x': new Date().toISOString(), 'y': 0}];
-      const pmrs = JSON.parse(localStorage.getItem("pmr-amount-data")) ?? [{'x': new Date().toISOString(), 'y': 0}];
-      const ctx = document.getElementById('mychart');
-      const mychart = new Chart(ctx, {
+<script>
+    //// chart
+    const visitors = JSON.parse(localStorage.getItem("visitor-amount-data")) ?? [{
+        'x': new Date().toISOString(),
+        'y': 0
+    }];
+    const pmrs = JSON.parse(localStorage.getItem("pmr-amount-data")) ?? [{'x': new Date().toISOString(), 'y': 0}];
+    const ctx = document.getElementById('mychart');
+    const mychart = new Chart(ctx, {
         type: 'scatter',
         data: {
-          labels: [],
-          datasets: [{
-            label: 'Visiteurs',
-            data: visitors,
-            borderColor: 'red',
-            backgroundColor: 'red',
-            showLine: true,
-            tension: 0,
-          }]
+            labels: [],
+            datasets: [{
+                label: 'Visiteurs',
+                data: visitors,
+                borderColor: 'red',
+                backgroundColor: 'red',
+                showLine: true,
+                tension: 0,
+            }]
         },
         options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          locale: Intl.NumberFormat("fr-FR"),
-          scales: {
-            x: {
-              type: 'time',
-              time: {
-                unit: 'minute',
-              },
-              grid: {
-                color: 'gray',
-              }
+            responsive: true,
+            maintainAspectRatio: false,
+            locale: Intl.NumberFormat("fr-FR"),
+            scales: {
+                x: {
+                    type: 'time',
+                    time: {
+                        unit: 'minute',
+                    },
+                    grid: {
+                        color: 'gray',
+                    }
+                },
+                y: {
+                    grid: {
+                        color: 'gray',
+                    }
+                }
             },
-            y: {
-              grid: {
-                color: 'gray',
-              }
-            }
-          },
         },
-      });
+    });
 
-      //// visitor amount
-      let totalvisitors = localStorage.getItem("total-visitors") ?? 0;
-      let visitoramount = localStorage.getItem("visitor-amount") ?? 0;
-      let pmramount = localStorage.getItem("pmr-amount") ?? 0;
-      document.getElementById("total-visitors").innerText = totalvisitors;
-      document.getElementById("visitor-amount").innerText = visitoramount;
-      document.getElementById("pmr-amount").innerText = pmramount;
+    //// visitor amount
+    let totalvisitors = localStorage.getItem("total-visitors") ?? 0;
+    let visitoramount = localStorage.getItem("visitor-amount") ?? 0;
+    let pmramount = localStorage.getItem("pmr-amount") ?? 0;
+    document.getElementById("total-visitors").innerText = totalvisitors;
+    document.getElementById("visitor-amount").innerText = visitoramount;
+    document.getElementById("pmr-amount").innerText = pmramount;
 
-      function incVisitor() {
+    function incVisitor() {
         visitoramount++;
         totalvisitors++;
         updateGraphData();
-      }
+    }
 
-      function decVisitor() {
+    function decVisitor() {
         visitoramount--;
         updateGraphData();
-      }
+    }
 
-      function incPMR() {
+    function incPMR() {
         pmramount++;
         incVisitor();
-      }
+    }
 
-      function decPMR() {
+    function decPMR() {
         pmramount--;
         decVisitor();
-      }
+    }
 
-      function updateGraphData() {
+    function updateGraphData() {
         document.getElementById("visitor-amount").innerText = visitoramount;
         document.getElementById("pmr-amount").innerText = pmramount;
         document.getElementById("total-visitors").innerText = totalvisitors;
-        visitors.push({x: Date.now(), y: visitoramount});
-        pmrs.push({x: Date.now(), y: pmramount});
-      }
-      setInterval(() => mychart.update(), 1000);
+        visitors.push({x: new Date().toISOString(), y: visitoramount});
+        pmrs.push({x: new Date().toISOString(), y: pmramount});
+    }
 
-      function backup() {
+    setInterval(() => mychart.update(), 1000);
+
+    function backup() {
         localStorage.setItem("visitor-amount", visitoramount);
         localStorage.setItem("pmr-amount", pmramount);
         localStorage.setItem("total-visitors", totalvisitors);
         localStorage.setItem("visitor-amount-data", JSON.stringify(visitors));
         localStorage.setItem("pmr-amount-data", JSON.stringify(pmrs));
-      }
-      let backup_tm = setTimeout(backupTimeout, 5000);
+    }
 
-      function backupTimeout() {
+    let backup_tm = setTimeout(backupTimeout, 5000);
+
+    function backupTimeout() {
         backup();
         setTimeout(backupTimeout, 5000);
-      }
+    }
 
-      function onCloseBackup() {
+    function onCloseBackup() {
         clearTimeout(backup_tm);
         backup();
-      }
-      addEventListener("beforeunload", onCloseBackup);
+    }
 
-      function reset() {
+    addEventListener("beforeunload", onCloseBackup);
+
+    function reset() {
         clearTimeout(backup_tm);
         removeEventListener("beforeunload", onCloseBackup);
         localStorage.removeItem("visitor-amount");
@@ -254,16 +253,43 @@
         localStorage.removeItem("pmr-amount-data");
         localStorage.removeItem("total-visitors");
         document.location.reload();
-      }
+    }
 
-      //// controls
-      window.onkeypress = gfg => {
-        if (gfg.keyCode == 43) // +
-          incVisitor();
-        if (gfg.keyCode == 45) // -
-          decVisitor();
-      }
-    </script>
-  </body>
+    let displayOptions = true;
+    function toggleOptions() {
+        displayOptions = !displayOptions;
+
+        document.getElementById("options-buttons").style.display = displayOptions ? "" : "none";
+	}
+    toggleOptions();
+
+    function save() {
+        let csv = "datetime,visitor,pmr visitor\r\n";
+        for (let i=0; i<visitors.length; i++) {
+            csv += visitors[i].x + "," + visitors[i].y + "," + pmrs[i].y + "\r\n";
+		}
+
+        let file = new Blob([csv], {type: "text"});
+		let url = URL.createObjectURL(file);
+
+        let a = document.createElement("a");
+        a.href = url;
+        a.download = "save.txt";
+        a.style.display = "none";
+        document.body.appendChild(a);
+        a.click();
+		document.body.removeChild(a);
+		URL.revokeObjectURL(url);
+	}
+
+    //// controls
+    window.onkeydown = gfg => {
+        if (gfg.key === "+") -
+            incVisitor();
+        if (gfg.key === "-")
+            decVisitor();
+    }
+</script>
+</body>
 
 </html>
