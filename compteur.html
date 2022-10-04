@@ -4,10 +4,11 @@
 <head>
 	<meta charset="utf-8">
 	<title>comptage - joutes du téméraire</title>
-	<script src="https://cdn.jsdelivr.net/npm/chart.js@3.6.1"></script>
-	<script src="https://cdn.jsdelivr.net/npm/luxon@2.1.1"></script>
-	<script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-luxon@1.1.0"></script>
-	<link type="text/css" rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.2.0/css/all.min.css"/>
+	<script src="https://cdn.jsdelivr.net/npm/chart.js@3.8.2"></script>
+	<script src="https://cdn.jsdelivr.net/npm/luxon@3.0.4"></script>
+	<script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-luxon@1.2.0"></script>
+	<link type="text/css" rel="stylesheet"
+		  href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.2.0/css/all.min.css"/>
 	<style>
         body {
             margin: 0;
@@ -87,10 +88,10 @@
             width: 75%;
         }
 
-		#options, #options-buttons {
-			display: flex;
-			flex-direction: row;
-		}
+        #options, #options-buttons {
+            display: flex;
+            flex-direction: row;
+        }
 	</style>
 </head>
 
@@ -124,11 +125,11 @@
 				<i class="fa-solid fa-bars"></i>
 			</button>
 			<div id="options-buttons">
-				<button onclick="reset()" style="background-color: #cc0000;">
-					<i class="fa-solid fa-trash"></i>
-				</button>
 				<button onclick="save()">
 					<i class="fa-solid fa-floppy-disk"></i>
+				</button>
+				<button onclick="reset()" style="background-color: #cc0000;">
+					<i class="fa-solid fa-trash"></i>
 				</button>
 			</div>
 		</div>
@@ -141,11 +142,16 @@
 
 <script>
     //// chart
-    const visitors = JSON.parse(localStorage.getItem("visitor-amount-data")) ?? [{
-        'x': new Date().toISOString(),
-        'y': 0
+    const visitors = JSON.parse(localStorage.getItem("visitor-data")) ?? [{
+        t: luxon.DateTime.local(),
+        all: 0,
+        pmr: 0
     }];
-    const pmrs = JSON.parse(localStorage.getItem("pmr-amount-data")) ?? [{'x': new Date().toISOString(), 'y': 0}];
+    visitors.forEach(v => {
+        if (typeof (v.t) == "string") {
+            v.t = luxon.DateTime.fromISO(v.t);
+        }
+    })
     const ctx = document.getElementById('mychart');
     const mychart = new Chart(ctx, {
         type: 'scatter',
@@ -158,6 +164,10 @@
                 backgroundColor: 'red',
                 showLine: true,
                 tension: 0,
+                parsing: {
+                    xAxisKey: 't',
+                    yAxisKey: 'all',
+                }
             }]
         },
         options: {
@@ -216,8 +226,7 @@
         document.getElementById("visitor-amount").innerText = visitoramount;
         document.getElementById("pmr-amount").innerText = pmramount;
         document.getElementById("total-visitors").innerText = totalvisitors;
-        visitors.push({x: new Date().toISOString(), y: visitoramount});
-        pmrs.push({x: new Date().toISOString(), y: pmramount});
+        visitors.push({t: luxon.DateTime.local(), all: visitoramount, pmr: pmramount});
     }
 
     setInterval(() => mychart.update(), 1000);
@@ -226,8 +235,7 @@
         localStorage.setItem("visitor-amount", visitoramount);
         localStorage.setItem("pmr-amount", pmramount);
         localStorage.setItem("total-visitors", totalvisitors);
-        localStorage.setItem("visitor-amount-data", JSON.stringify(visitors));
-        localStorage.setItem("pmr-amount-data", JSON.stringify(pmrs));
+        localStorage.setItem("visitor-data", JSON.stringify(visitors));
     }
 
     let backup_tm = setTimeout(backupTimeout, 5000);
@@ -248,29 +256,30 @@
         clearTimeout(backup_tm);
         removeEventListener("beforeunload", onCloseBackup);
         localStorage.removeItem("visitor-amount");
-        localStorage.removeItem("visitor-amount-data");
+        localStorage.removeItem("visitor-data");
         localStorage.removeItem("pmr-amount");
-        localStorage.removeItem("pmr-amount-data");
         localStorage.removeItem("total-visitors");
         document.location.reload();
     }
 
     let displayOptions = true;
+
     function toggleOptions() {
         displayOptions = !displayOptions;
 
         document.getElementById("options-buttons").style.display = displayOptions ? "" : "none";
-	}
+    }
+
     toggleOptions();
 
     function save() {
         let csv = "datetime,visitor,pmr visitor\r\n";
-        for (let i=0; i<visitors.length; i++) {
-            csv += visitors[i].x + "," + visitors[i].y + "," + pmrs[i].y + "\r\n";
-		}
+        visitors.forEach(v => {
+            csv += v.t.toISO() + "," + v.all + "," + v.pmr + "\r\n";
+        });
 
         let file = new Blob([csv], {type: "text"});
-		let url = URL.createObjectURL(file);
+        let url = URL.createObjectURL(file);
 
         let a = document.createElement("a");
         a.href = url;
@@ -278,9 +287,9 @@
         a.style.display = "none";
         document.body.appendChild(a);
         a.click();
-		document.body.removeChild(a);
-		URL.revokeObjectURL(url);
-	}
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    }
 
     //// controls
     window.onkeydown = gfg => {
